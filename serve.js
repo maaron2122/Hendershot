@@ -3,7 +3,8 @@ const fs = require("fs");
 const path = require("path");
 
 const root = __dirname;
-const port = 8000;
+const port = Number(process.env.PORT || 8000);
+const host = process.env.HOST || "0.0.0.0";
 const requestsFile = path.join(root, "requests.json");
 const calendarDir = path.join(root, "calendar-events");
 
@@ -377,6 +378,6 @@ http
 
     serveStatic(req, res, pathname);
   })
-  .listen(port, "127.0.0.1", () => {
-    console.log(`Preview server running at http://127.0.0.1:${port}`);
+  .listen(port, host, () => {
+    console.log(`Preview server running at http://${host}:${port}`);
   });
