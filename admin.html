@@ -52,6 +52,23 @@
       <p class="form-note" id="feed-status" aria-live="polite"></p>
     </section>
 
+    <section class="admin-feed-preview panel-card">
+      <div>
+        <p class="eyebrow">Live Feed Preview</p>
+        <h2>Approved jobs currently included in the shared calendar feed.</h2>
+        <p class="section-copy">
+          If a job appears here, it is already in the `.ics` feed. Calendar apps may
+          still take extra time to refresh after that.
+        </p>
+      </div>
+      <div class="feed-preview-list" id="feed-preview-list" aria-live="polite">
+        <article class="admin-empty">
+          <h2>No approved jobs yet</h2>
+          <p>Approved requests will appear here and in the shared calendar feed.</p>
+        </article>
+      </div>
+    </section>
+
     <section class="admin-summary">
       <article class="panel-card">
         <span class="stat" id="pending-count">0</span>

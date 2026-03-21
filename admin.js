@@ -6,6 +6,7 @@ const declinedCount = document.getElementById("declined-count");
 const calendarFeedLink = document.getElementById("calendar-feed-link");
 const copyFeedLinkButton = document.getElementById("copy-feed-link");
 const feedStatus = document.getElementById("feed-status");
+const feedPreviewList = document.getElementById("feed-preview-list");
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -54,8 +55,49 @@ function updateSummary(requests) {
   declinedCount.textContent = requests.filter((request) => request.status === "declined").length;
 }
 
+function renderFeedPreview(requests) {
+  if (!feedPreviewList) {
+    return;
+  }
+
+  const approvedRequests = requests.filter((request) => request.status === "approved");
+
+  if (!approvedRequests.length) {
+    feedPreviewList.innerHTML = `
+      <article class="admin-empty">
+        <h2>No approved jobs yet</h2>
+        <p>Approved requests will appear here and in the shared calendar feed.</p>
+      </article>
+    `;
+    return;
+  }
+
+  feedPreviewList.innerHTML = approvedRequests
+    .map(
+      (request) => `
+        <article class="feed-preview-card">
+          <div class="feed-preview-card__top">
+            <div>
+              <p class="eyebrow">Included In Feed</p>
+              <h3>${escapeHtml(request.name)}</h3>
+            </div>
+            <span class="status-badge status-badge--approved">Approved</span>
+          </div>
+          <div class="feed-preview-card__grid">
+            <p><strong>Date:</strong> ${escapeHtml(formatDate(request.projectDate))}</p>
+            <p><strong>Time:</strong> ${escapeHtml(formatTime(request.projectTime))}</p>
+            <p><strong>Phone:</strong> ${escapeHtml(request.phone || "Not provided")}</p>
+            <p><strong>Address:</strong> ${escapeHtml(`${request.address}, ${request.city}`)}</p>
+          </div>
+        </article>
+      `
+    )
+    .join("");
+}
+
 function renderRequests(requests) {
   updateSummary(requests);
+  renderFeedPreview(requests);
 
   if (!requests.length) {
     requestList.innerHTML = `
