@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hendershot Concrete LLC | Request Dashboard</title>
+  <meta name="description" content="Request dashboard for Hendershot Concrete LLC.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-page">
+  <div class="site-bg" aria-hidden="true">
+    <div class="site-bg__grid"></div>
+    <div class="site-bg__glow site-bg__glow--one"></div>
+    <div class="site-bg__glow site-bg__glow--two"></div>
+  </div>
+
+  <main class="admin-shell">
+    <section class="admin-header">
+      <div>
+        <p class="eyebrow">Request Dashboard</p>
+        <h1>Approve or decline estimate requests</h1>
+        <p class="section-copy">
+          This dashboard shows each request with a live status. Use approve or decline
+          to move work out of pending and keep the queue organized.
+        </p>
+      </div>
+      <div class="admin-header__actions">
+        <a class="button button--ghost" href="/index.html">Back to website</a>
+        <button class="button button--primary" id="refresh-requests" type="button">Refresh</button>
+      </div>
+    </section>
+
+    <section class="admin-feed panel-card">
+      <div>
+        <p class="eyebrow">Auto-Sync Feed</p>
+        <h2>Subscribe once, then approved requests can appear automatically in a calendar app.</h2>
+        <p class="section-copy">
+          Use the feed link below in Google Calendar, Apple Calendar, or Outlook as a
+          subscribed internet calendar. Refresh timing depends on the calendar app.
+        </p>
+      </div>
+      <div class="admin-feed__actions">
+        <a class="button button--ghost" id="calendar-feed-link" href="/calendar-feed.ics" target="_blank" rel="noreferrer">Open Calendar Feed</a>
+        <button class="button button--primary" id="copy-feed-link" type="button">Copy Feed Link</button>
+      </div>
+      <p class="form-note" id="feed-status" aria-live="polite"></p>
+    </section>
+
+    <section class="admin-summary">
+      <article class="panel-card">
+        <span class="stat" id="pending-count">0</span>
+        <p>Pending requests</p>
+      </article>
+      <article class="panel-card">
+        <span class="stat" id="approved-count">0</span>
+        <p>Approved requests</p>
+      </article>
+      <article class="panel-card">
+        <span class="stat" id="declined-count">0</span>
+        <p>Declined requests</p>
+      </article>
+    </section>
+
+    <section class="admin-list" id="request-list" aria-live="polite">
+      <article class="admin-empty">
+        <h2>No requests yet</h2>
+        <p>Estimate requests submitted from the homepage will appear here.</p>
+      </article>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
