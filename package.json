@@ -1,0 +1,9 @@
+{
+  "name": "hendershot-concrete-llc",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Lead intake and calendar feed site for Hendershot Concrete LLC",
+  "scripts": {
+    "start": "node serve.js"
+  }
+}
