@@ -547,6 +547,30 @@ main {
   min-height: 100vh;
 }
 
+.login-shell {
+  min-height: 100vh;
+  width: min(calc(100% - 32px), 640px);
+  margin: 0 auto;
+  display: grid;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.login-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 32px;
+}
+
+.login-card h1 {
+  margin: 8px 0 14px;
+  font-family: "Sora", sans-serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
 .admin-shell {
   width: min(calc(100% - 32px), var(--max));
   margin: 0 auto;

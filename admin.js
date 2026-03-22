@@ -7,6 +7,7 @@ const calendarFeedLink = document.getElementById("calendar-feed-link");
 const copyFeedLinkButton = document.getElementById("copy-feed-link");
 const feedStatus = document.getElementById("feed-status");
 const feedPreviewList = document.getElementById("feed-preview-list");
+const logoutButton = document.getElementById("logout-button");
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -177,6 +178,11 @@ async function loadRequests() {
 
   try {
     const response = await fetch("/api/requests");
+    if (response.status === 401) {
+      window.location.href = "/login.html";
+      return;
+    }
+
     if (!response.ok) {
       throw new Error("Unable to load requests.");
     }
@@ -223,6 +229,11 @@ async function updateRequestStatus(id, status) {
       body: JSON.stringify({ status }),
     });
 
+    if (response.status === 401) {
+      window.location.href = "/login.html";
+      return;
+    }
+
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       throw new Error(data.error || "Unable to update request.");
@@ -231,6 +242,20 @@ async function updateRequestStatus(id, status) {
     await loadRequests();
   } catch (error) {
     window.alert(error.message);
+  }
+}
+
+async function logout() {
+  try {
+    await fetch("/api/admin/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+    });
+  } finally {
+    window.location.href = "/login.html";
   }
 }
 
@@ -245,5 +270,6 @@ requestList.addEventListener("click", (event) => {
 
 refreshButton?.addEventListener("click", loadRequests);
 copyFeedLinkButton?.addEventListener("click", copyFeedLink);
+logoutButton?.addEventListener("click", logout);
 
 loadRequests();

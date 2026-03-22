@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hendershot Concrete LLC | Admin Login</title>
+  <meta name="description" content="Admin login for Hendershot Concrete LLC request dashboard.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-page">
+  <div class="site-bg" aria-hidden="true">
+    <div class="site-bg__grid"></div>
+    <div class="site-bg__glow site-bg__glow--one"></div>
+    <div class="site-bg__glow site-bg__glow--two"></div>
+  </div>
+
+  <main class="login-shell">
+    <section class="login-card">
+      <p class="eyebrow">Protected Access</p>
+      <h1>Admin dashboard login</h1>
+      <p class="section-copy">
+        Customer requests are now protected behind an admin password. Sign in to review,
+        approve, decline, and access the private calendar feed URL.
+      </p>
+
+      <form class="contact-form" id="login-form" novalidate>
+        <label>
+          Admin password
+          <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+
+        <button class="button button--primary" type="submit">Sign In</button>
+        <p class="form-note" id="login-status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+
+  <script src="login.js"></script>
+</body>
+</html>
