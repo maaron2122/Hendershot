@@ -128,11 +128,11 @@
     "projectDate": "2026-03-23",
     "projectTime": "08:26",
     "details": "Hello",
-    "status": "pending",
+    "status": "approved",
     "createdAt": "2026-03-21T07:21:33.821Z",
-    "updatedAt": "2026-03-21T07:21:33.821Z",
-    "calendarEventId": "",
-    "calendarEventLink": "",
-    "calendarSyncedAt": ""
+    "updatedAt": "2026-03-22T04:29:54.169Z",
+    "calendarEventId": "1774077693822",
+    "calendarEventLink": "/calendar-events/request-1774077693822.ics",
+    "calendarSyncedAt": "2026-03-22T04:29:54.169Z"
   }
 ]

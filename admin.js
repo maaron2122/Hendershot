@@ -3,11 +3,13 @@ const refreshButton = document.getElementById("refresh-requests");
 const pendingCount = document.getElementById("pending-count");
 const approvedCount = document.getElementById("approved-count");
 const declinedCount = document.getElementById("declined-count");
-const calendarFeedLink = document.getElementById("calendar-feed-link");
-const copyFeedLinkButton = document.getElementById("copy-feed-link");
-const feedStatus = document.getElementById("feed-status");
-const feedPreviewList = document.getElementById("feed-preview-list");
 const logoutButton = document.getElementById("logout-button");
+const requestListTitle = document.getElementById("request-list-title");
+const requestListCopy = document.getElementById("request-list-copy");
+const summaryFilters = Array.from(document.querySelectorAll("[data-filter-status]"));
+
+let latestRequests = [];
+let activeFilterStatus = "";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -56,55 +58,53 @@ function updateSummary(requests) {
   declinedCount.textContent = requests.filter((request) => request.status === "declined").length;
 }
 
-function renderFeedPreview(requests) {
-  if (!feedPreviewList) {
-    return;
+function updateFilterUi() {
+  const titleMap = {
+    pending: "Pending requests",
+    approved: "Approved requests",
+    declined: "Declined requests",
+  };
+
+  const copyMap = {
+    pending: "Only pending requests are shown below.",
+    approved: "Only approved requests are shown below.",
+    declined: "Only declined requests are shown below.",
+  };
+
+  if (requestListTitle) {
+    requestListTitle.textContent = activeFilterStatus ? titleMap[activeFilterStatus] : "All requests";
   }
 
-  const approvedRequests = requests.filter((request) => request.status === "approved");
-
-  if (!approvedRequests.length) {
-    feedPreviewList.innerHTML = `
-      <article class="admin-empty">
-        <h2>No approved jobs yet</h2>
-        <p>Approved requests will appear here and in the shared calendar feed.</p>
-      </article>
-    `;
-    return;
+  if (requestListCopy) {
+    requestListCopy.textContent = activeFilterStatus
+      ? copyMap[activeFilterStatus]
+      : "Every request is shown below. Click a status card above to focus on one type.";
   }
 
-  feedPreviewList.innerHTML = approvedRequests
-    .map(
-      (request) => `
-        <article class="feed-preview-card">
-          <div class="feed-preview-card__top">
-            <div>
-              <p class="eyebrow">Included In Feed</p>
-              <h3>${escapeHtml(request.name)}</h3>
-            </div>
-            <span class="status-badge status-badge--approved">Approved</span>
-          </div>
-          <div class="feed-preview-card__grid">
-            <p><strong>Date:</strong> ${escapeHtml(formatDate(request.projectDate))}</p>
-            <p><strong>Time:</strong> ${escapeHtml(formatTime(request.projectTime))}</p>
-            <p><strong>Phone:</strong> ${escapeHtml(request.phone || "Not provided")}</p>
-            <p><strong>Address:</strong> ${escapeHtml(`${request.address}, ${request.city}`)}</p>
-          </div>
-        </article>
-      `
-    )
-    .join("");
+  summaryFilters.forEach((button) => {
+    const isActive = button.getAttribute("data-filter-status") === activeFilterStatus;
+    button.setAttribute("aria-pressed", String(isActive));
+    button.classList.toggle("summary-filter--active", isActive);
+  });
 }
 
-function renderRequests(requests) {
-  updateSummary(requests);
-  renderFeedPreview(requests);
+function getVisibleRequests() {
+  if (!activeFilterStatus) {
+    return latestRequests;
+  }
+
+  return latestRequests.filter((request) => request.status === activeFilterStatus);
+}
+
+function renderRequests() {
+  const requests = getVisibleRequests();
+  updateFilterUi();
 
   if (!requests.length) {
     requestList.innerHTML = `
       <article class="admin-empty">
-        <h2>No requests yet</h2>
-        <p>Estimate requests submitted from the homepage will appear here.</p>
+        <h2>No matching requests</h2>
+        <p>There are no requests in this status right now.</p>
       </article>
     `;
     return;
@@ -115,6 +115,7 @@ function renderRequests(requests) {
       const statusClass = `status-badge status-badge--${request.status}`;
       const approvedDisabled = request.status === "approved" ? "disabled" : "";
       const declinedDisabled = request.status === "declined" ? "disabled" : "";
+      const showUndo = request.status === "approved" || request.status === "declined";
 
       return `
         <article class="request-card">
@@ -161,6 +162,15 @@ function renderRequests(requests) {
             <button class="button button--ghost" data-id="${escapeHtml(request.id)}" data-status="declined" ${declinedDisabled}>
               Decline
             </button>
+            ${
+              showUndo
+                ? `
+                  <button class="button button--ghost" data-id="${escapeHtml(request.id)}" data-status="pending">
+                    Undo to Pending
+                  </button>
+                `
+                : ""
+            }
           </div>
         </article>
       `;
@@ -188,13 +198,9 @@ async function loadRequests() {
     }
 
     const data = await response.json();
-    if (calendarFeedLink && data.calendarFeedUrl) {
-      const absoluteFeedUrl = new URL(data.calendarFeedUrl, window.location.origin).toString();
-      calendarFeedLink.href = absoluteFeedUrl;
-      calendarFeedLink.textContent = "Open Calendar Feed";
-      copyFeedLinkButton?.setAttribute("data-feed-url", absoluteFeedUrl);
-    }
-    renderRequests(data.requests ?? []);
+    latestRequests = data.requests ?? [];
+    updateSummary(latestRequests);
+    renderRequests();
   } catch (error) {
     requestList.innerHTML = `
       <article class="admin-empty">
@@ -202,20 +208,6 @@ async function loadRequests() {
         <p>${escapeHtml(error.message)}</p>
       </article>
     `;
-  }
-}
-
-async function copyFeedLink() {
-  const feedUrl = copyFeedLinkButton?.getAttribute("data-feed-url");
-  if (!feedUrl || !feedStatus) {
-    return;
-  }
-
-  try {
-    await navigator.clipboard.writeText(feedUrl);
-    feedStatus.textContent = "Calendar feed link copied.";
-  } catch {
-    feedStatus.textContent = "Could not copy automatically. Open the feed and copy the URL from your browser.";
   }
 }
 
@@ -237,6 +229,11 @@ async function updateRequestStatus(id, status) {
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       throw new Error(data.error || "Unable to update request.");
+    }
+
+    const data = await response.json().catch(() => ({}));
+    if (data.email?.warning) {
+      window.alert(data.email.warning);
     }
 
     await loadRequests();
@@ -268,8 +265,15 @@ requestList.addEventListener("click", (event) => {
   updateRequestStatus(button.dataset.id, button.dataset.status);
 });
 
+summaryFilters.forEach((button) => {
+  button.addEventListener("click", () => {
+    const nextStatus = button.getAttribute("data-filter-status") || "";
+    activeFilterStatus = activeFilterStatus === nextStatus ? "" : nextStatus;
+    renderRequests();
+  });
+});
+
 refreshButton?.addEventListener("click", loadRequests);
-copyFeedLinkButton?.addEventListener("click", copyFeedLink);
 logoutButton?.addEventListener("click", logout);
 
 loadRequests();

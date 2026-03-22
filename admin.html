@@ -32,57 +32,33 @@
       </div>
       <div class="admin-header__actions">
         <a class="button button--ghost" href="/index.html">Back to website</a>
+        <a class="button button--ghost" href="/calendar.html">Open Calendar</a>
         <button class="button button--ghost" id="logout-button" type="button">Log Out</button>
         <button class="button button--primary" id="refresh-requests" type="button">Refresh</button>
       </div>
     </section>
 
-    <section class="admin-feed panel-card">
-      <div>
-        <p class="eyebrow">Auto-Sync Feed</p>
-        <h2>Subscribe once, then approved requests can appear automatically in a calendar app.</h2>
-        <p class="section-copy">
-          Use the feed link below in Google Calendar, Apple Calendar, or Outlook as a
-          subscribed internet calendar. Refresh timing depends on the calendar app.
-        </p>
-      </div>
-      <div class="admin-feed__actions">
-        <a class="button button--ghost" id="calendar-feed-link" href="/calendar-feed.ics" target="_blank" rel="noreferrer">Open Calendar Feed</a>
-        <button class="button button--primary" id="copy-feed-link" type="button">Copy Feed Link</button>
-      </div>
-      <p class="form-note" id="feed-status" aria-live="polite"></p>
-    </section>
-
-    <section class="admin-feed-preview panel-card">
-      <div>
-        <p class="eyebrow">Live Feed Preview</p>
-        <h2>Approved jobs currently included in the shared calendar feed.</h2>
-        <p class="section-copy">
-          If a job appears here, it is already in the `.ics` feed. Calendar apps may
-          still take extra time to refresh after that.
-        </p>
-      </div>
-      <div class="feed-preview-list" id="feed-preview-list" aria-live="polite">
-        <article class="admin-empty">
-          <h2>No approved jobs yet</h2>
-          <p>Approved requests will appear here and in the shared calendar feed.</p>
-        </article>
-      </div>
-    </section>
-
     <section class="admin-summary">
-      <article class="panel-card">
+      <button class="panel-card summary-filter" id="filter-pending" type="button" data-filter-status="pending" aria-pressed="false">
         <span class="stat" id="pending-count">0</span>
         <p>Pending requests</p>
-      </article>
-      <article class="panel-card">
+      </button>
+      <button class="panel-card summary-filter" id="filter-approved" type="button" data-filter-status="approved" aria-pressed="false">
         <span class="stat" id="approved-count">0</span>
         <p>Approved requests</p>
-      </article>
-      <article class="panel-card">
+      </button>
+      <button class="panel-card summary-filter" id="filter-declined" type="button" data-filter-status="declined" aria-pressed="false">
         <span class="stat" id="declined-count">0</span>
         <p>Declined requests</p>
-      </article>
+      </button>
+    </section>
+
+    <section class="admin-list-header">
+      <p class="eyebrow">Visible Requests</p>
+      <h2 id="request-list-title">All requests</h2>
+      <p class="section-copy" id="request-list-copy">
+        Every request is shown below. Click a status card above to focus on one type.
+      </p>
     </section>
 
     <section class="admin-list" id="request-list" aria-live="polite">

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hendershot Concrete LLC | Calendar</title>
+  <meta name="description" content="Protected internal calendar for Hendershot Concrete LLC.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-page">
+  <div class="site-bg" aria-hidden="true">
+    <div class="site-bg__grid"></div>
+    <div class="site-bg__glow site-bg__glow--one"></div>
+    <div class="site-bg__glow site-bg__glow--two"></div>
+  </div>
+
+  <main class="admin-shell">
+    <section class="admin-header">
+      <div>
+        <p class="eyebrow">Internal Calendar</p>
+        <h1>Scheduled jobs in one protected view</h1>
+        <p class="section-copy">
+          This page shows approved jobs only. Click a date to see everything scheduled
+          for that day, then click an address to open the full job details.
+        </p>
+      </div>
+      <div class="admin-header__actions">
+        <a class="button button--ghost" href="/admin.html">Back to Dashboard</a>
+        <button class="button button--ghost" id="logout-button" type="button">Log Out</button>
+      </div>
+    </section>
+
+    <section class="admin-calendar panel-card">
+      <div class="admin-calendar__header">
+        <div>
+          <p class="eyebrow">Schedule View</p>
+          <h2>Approved jobs scheduled directly inside the app.</h2>
+          <p class="section-copy">
+            This view keeps scheduling inside the app instead of depending on a third-party calendar.
+          </p>
+        </div>
+        <div class="admin-calendar__actions">
+          <button class="button button--ghost" id="calendar-prev" type="button">Previous</button>
+          <p class="admin-calendar__month" id="calendar-month-label">Month</p>
+          <button class="button button--ghost" id="calendar-next" type="button">Next</button>
+        </div>
+      </div>
+
+      <div class="calendar-grid-shell">
+        <div class="calendar-grid" id="calendar-grid" aria-live="polite">
+          <article class="admin-empty">
+            <h2>Loading calendar</h2>
+            <p>Please wait while the schedule view is prepared.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="calendar-modal" id="calendar-modal" hidden>
+    <div class="calendar-modal__backdrop" data-close-calendar-modal></div>
+    <div class="calendar-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="calendar-modal-title">
+      <button class="calendar-modal__close" id="calendar-modal-close" type="button" aria-label="Close">
+        Close
+      </button>
+      <div class="calendar-modal__content" id="calendar-modal-content">
+        <p class="eyebrow">Selected Day</p>
+        <h3 id="calendar-modal-title">Choose a date on the calendar</h3>
+        <p class="section-copy">
+          Click any day with a scheduled job to review its approved requests here.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="calendar.js"></script>
+</body>
+</html>

@@ -8,6 +8,9 @@ const port = Number(process.env.PORT || 8000);
 const host = process.env.HOST || "0.0.0.0";
 const requestsFile = path.join(root, "requests.json");
 const calendarDir = path.join(root, "calendar-events");
+const envFile = path.join(root, ".env");
+
+loadEnvFile(envFile);
 
 const mimeTypes = {
   ".css": "text/css; charset=utf-8",
@@ -33,10 +36,40 @@ const configuredPasswordPlain = String(process.env.ADMIN_PASSWORD || "").trim();
 const generatedAdminPassword = configuredPasswordHash || configuredPasswordPlain
   ? ""
   : crypto.randomBytes(9).toString("base64url");
+const resendApiKey = String(process.env.RESEND_API_KEY || "").trim();
+const emailFrom = String(process.env.EMAIL_FROM || "").trim();
+const businessName = String(process.env.BUSINESS_NAME || "Hendershot Concrete LLC").trim();
 
 if (generatedAdminPassword) {
   console.log(`Temporary admin password: ${generatedAdminPassword}`);
   console.log("Set ADMIN_PASSWORD or ADMIN_PASSWORD_HASH in your host environment to make admin access persistent.");
+}
+
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return;
+  }
+
+  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) {
+      continue;
+    }
+
+    const separatorIndex = line.indexOf("=");
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = line.slice(0, separatorIndex).trim();
+    const value = line.slice(separatorIndex + 1).trim().replace(/^"(.*)"$/, "$1");
+
+    if (key && process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
 }
 
 function ensureStorage() {
@@ -241,6 +274,88 @@ function ensureCalendarFile(request) {
   };
 }
 
+function isEmailConfigured() {
+  return Boolean(resendApiKey && emailFrom);
+}
+
+function buildStatusEmail(request, status) {
+  const formattedDate = request.projectDate;
+  const formattedTime = request.projectTime;
+
+  if (status === "approved") {
+    return {
+      subject: `${businessName}: Your requested date is approved`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f1f1f;">
+          <p>Hello ${escapeHtml(request.name)},</p>
+          <p>Your requested concrete project date has been approved.</p>
+          <p>
+            <strong>Date:</strong> ${escapeHtml(formattedDate)}<br>
+            <strong>Time:</strong> ${escapeHtml(formattedTime)}<br>
+            <strong>Address:</strong> ${escapeHtml(request.address)}, ${escapeHtml(request.city)}
+          </p>
+          <p>We look forward to working with you.</p>
+          <p>${escapeHtml(businessName)}</p>
+        </div>
+      `,
+    };
+  }
+
+  return {
+    subject: `${businessName}: Your requested date is unavailable`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f1f1f;">
+        <p>Hello ${escapeHtml(request.name)},</p>
+        <p>
+          The requested date of ${escapeHtml(formattedDate)} at ${escapeHtml(formattedTime)}
+          did not work for our schedule.
+        </p>
+        <p>We will be reaching out to you to find a better time.</p>
+        <p>Thank you for your patience.</p>
+        <p>${escapeHtml(businessName)}</p>
+      </div>
+    `,
+  };
+}
+
+async function sendStatusEmail(request, status) {
+  if (!isEmailConfigured()) {
+    return {
+      sent: false,
+      warning: "Email notifications are not configured. Set RESEND_API_KEY and EMAIL_FROM to enable them.",
+    };
+  }
+
+  const email = buildStatusEmail(request, status);
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: emailFrom,
+      to: [request.email],
+      subject: email.subject,
+      html: email.html,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    return {
+      sent: false,
+      warning: data.message || "The status changed, but the email notification could not be sent.",
+    };
+  }
+
+  return {
+    sent: true,
+    id: data.id || "",
+  };
+}
+
 function parseCookies(req) {
   const header = req.headers.cookie || "";
   const pairs = header.split(/;\s*/).filter(Boolean);
@@ -409,7 +524,7 @@ http
       return;
     }
 
-    if (req.method === "GET" && pathname === "/admin.html") {
+    if (req.method === "GET" && (pathname === "/admin.html" || pathname === "/calendar.html")) {
       if (!getSession(req)) {
         redirect(res, "/login.html");
         return;
@@ -504,8 +619,8 @@ http
         const payload = await readRequestBody(req);
         const nextStatus = String(payload.status || "").trim().toLowerCase();
 
-        if (!["approved", "declined"].includes(nextStatus)) {
-          sendJson(res, 400, { error: "status must be approved or declined." });
+        if (!["pending", "approved", "declined"].includes(nextStatus)) {
+          sendJson(res, 400, { error: "status must be pending, approved, or declined." });
           return;
         }
 
@@ -524,11 +639,22 @@ http
           request.calendarSyncedAt = calendarEvent.syncedAt;
         }
 
+        if (nextStatus === "pending") {
+          request.calendarEventId = "";
+          request.calendarEventLink = "";
+          request.calendarSyncedAt = "";
+        }
+
         request.status = nextStatus;
         request.updatedAt = new Date().toISOString();
         writeRequests(requests);
 
-        sendJson(res, 200, { request });
+        let emailResult = { sent: false };
+        if (nextStatus === "approved" || nextStatus === "declined") {
+          emailResult = await sendStatusEmail(request, nextStatus);
+        }
+
+        sendJson(res, 200, { request, email: emailResult });
       } catch (error) {
         sendJson(res, 400, { error: error.message || "Unable to update request." });
       }
