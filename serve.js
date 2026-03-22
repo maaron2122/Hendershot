@@ -39,6 +39,8 @@ const generatedAdminPassword = configuredPasswordHash || configuredPasswordPlain
 const resendApiKey = String(process.env.RESEND_API_KEY || "").trim();
 const emailFrom = String(process.env.EMAIL_FROM || "").trim();
 const businessName = String(process.env.BUSINESS_NAME || "Hendershot Concrete LLC").trim();
+const businessPhone = String(process.env.BUSINESS_PHONE || "").trim();
+const businessReplyEmail = String(process.env.BUSINESS_REPLY_EMAIL || "").trim();
 
 if (generatedAdminPassword) {
   console.log(`Temporary admin password: ${generatedAdminPassword}`);
@@ -205,6 +207,15 @@ function escapeIcsText(value) {
     .replaceAll("\n", "\\n");
 }
 
+function escapeHtmlText(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function buildCalendarEventLines(request) {
   const updatedDate = new Date(request.updatedAt || request.createdAt || Date.now());
   const startDate = new Date(`${request.projectDate}T${request.projectTime || "08:00"}:00`);
@@ -281,40 +292,89 @@ function isEmailConfigured() {
 function buildStatusEmail(request, status) {
   const formattedDate = request.projectDate;
   const formattedTime = request.projectTime;
+  const safeName = escapeHtmlText(request.name);
+  const safeDate = escapeHtmlText(formattedDate);
+  const safeTime = escapeHtmlText(formattedTime);
+  const safeAddress = escapeHtmlText(request.address);
+  const safeCity = escapeHtmlText(request.city);
+  const safeBusinessName = escapeHtmlText(businessName);
+  const safeBusinessPhone = escapeHtmlText(businessPhone);
+  const safeBusinessReplyEmail = escapeHtmlText(businessReplyEmail);
+  const contactLines = [
+    businessPhone ? `<div><strong>Phone:</strong> ${safeBusinessPhone}</div>` : "",
+    businessReplyEmail ? `<div><strong>Email:</strong> ${safeBusinessReplyEmail}</div>` : "",
+  ]
+    .filter(Boolean)
+    .join("");
+
+  const emailShell = (accent, label, title, intro, body, closing) => `
+    <div style="margin:0; padding:32px 16px; background:#f4efe8; font-family:Arial, sans-serif; color:#1f1f1f;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px; margin:0 auto; border-collapse:collapse;">
+        <tr>
+          <td style="padding:0;">
+            <div style="background:#1e1a18; color:#f7f1e8; border-radius:24px 24px 0 0; padding:24px 28px; border-bottom:4px solid ${accent};">
+              <div style="font-size:12px; letter-spacing:0.18em; text-transform:uppercase; color:#dec4a1; margin-bottom:10px;">${safeBusinessName}</div>
+              <div style="font-size:28px; line-height:1.15; font-weight:700; margin:0 0 8px;">${title}</div>
+              <div style="font-size:14px; color:#d5c7b4;">${label}</div>
+            </div>
+            <div style="background:#ffffff; border:1px solid #e7ddd1; border-top:0; border-radius:0 0 24px 24px; padding:28px;">
+              <p style="margin:0 0 16px; font-size:16px;">Hello ${safeName},</p>
+              <p style="margin:0 0 18px; font-size:15px; line-height:1.7;">${intro}</p>
+              <div style="background:#f8f4ee; border:1px solid #eadfce; border-radius:18px; padding:18px 20px; margin:0 0 18px;">
+                <p style="margin:0 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:0.12em; color:#9b7a5d;">Requested Visit</p>
+                <p style="margin:0 0 6px; font-size:15px;"><strong>Date:</strong> ${safeDate}</p>
+                <p style="margin:0 0 6px; font-size:15px;"><strong>Time:</strong> ${safeTime}</p>
+                <p style="margin:0; font-size:15px;"><strong>Address:</strong> ${safeAddress}, ${safeCity}</p>
+              </div>
+              <div style="font-size:15px; line-height:1.7; margin:0 0 18px;">${body}</div>
+              <p style="margin:0; font-size:15px; line-height:1.7;">${closing}</p>
+              <p style="margin:18px 0 0; font-size:15px; line-height:1.7;">${safeBusinessName}</p>
+              ${
+                contactLines
+                  ? `
+                    <div style="margin-top:12px; padding-top:12px; border-top:1px solid #eadfce; font-size:14px; line-height:1.8; color:#5c4c3d;">
+                      ${contactLines}
+                    </div>
+                  `
+                  : ""
+              }
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
 
   if (status === "approved") {
     return {
       subject: `${businessName}: Your requested date is approved`,
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f1f1f;">
-          <p>Hello ${escapeHtml(request.name)},</p>
-          <p>Your requested concrete project date has been approved.</p>
-          <p>
-            <strong>Date:</strong> ${escapeHtml(formattedDate)}<br>
-            <strong>Time:</strong> ${escapeHtml(formattedTime)}<br>
-            <strong>Address:</strong> ${escapeHtml(request.address)}, ${escapeHtml(request.city)}
-          </p>
-          <p>We look forward to working with you.</p>
-          <p>${escapeHtml(businessName)}</p>
-        </div>
-      `,
+      html: emailShell(
+        "#3f7f5f",
+        "Approved Request",
+        "Your requested date has been approved",
+        "We reviewed your request and your selected date is confirmed on our schedule.",
+        `
+          <p style="margin:0 0 12px;">We look forward to working with you and will continue preparing for your project.</p>
+          <p style="margin:0;">If anything changes before the scheduled date, we will reach out directly.</p>
+        `,
+        "Thank you for choosing us."
+      ),
     };
   }
 
   return {
     subject: `${businessName}: Your requested date is unavailable`,
-    html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f1f1f;">
-        <p>Hello ${escapeHtml(request.name)},</p>
-        <p>
-          The requested date of ${escapeHtml(formattedDate)} at ${escapeHtml(formattedTime)}
-          did not work for our schedule.
-        </p>
-        <p>We will be reaching out to you to find a better time.</p>
-        <p>Thank you for your patience.</p>
-        <p>${escapeHtml(businessName)}</p>
-      </div>
-    `,
+    html: emailShell(
+      "#b9652c",
+      "Schedule Update",
+      "Your requested date did not work",
+      "We reviewed your request, and the date you selected is not available on our schedule.",
+      `
+        <p style="margin:0 0 12px;">We will be reaching out to you to find a better time that works for your project.</p>
+        <p style="margin:0;">Your request is still in our system, and we will follow up as soon as possible.</p>
+      `,
+      "Thank you for your patience and flexibility."
+    ),
   };
 }
 
